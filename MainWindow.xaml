@@ -1,0 +1,170 @@
+<Window x:Class="ScreenSwap.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:ScreenSwap.Controls"
+        Title="ScreenSwap · 双屏主显示器快捷切换"
+        Width="780" Height="700"
+        WindowStyle="None" ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BgBrush}"
+        Foreground="{StaticResource FgBrush}"
+        FontFamily="Microsoft YaHei UI, Segoe UI, sans-serif">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0" CornerRadius="0" GlassFrameThickness="0"
+                      UseAeroCaptionButtons="False" ResizeBorderThickness="0" />
+    </WindowChrome.WindowChrome>
+
+    <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="62" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- 标题栏 -->
+            <Grid Grid.Row="0" Background="{StaticResource HeaderBrush}"
+                  MouseLeftButtonDown="Header_MouseLeftButtonDown">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Border Width="34" Height="34" Margin="22,0,0,0" CornerRadius="9"
+                        Background="#FF3A6FD8" VerticalAlignment="Center">
+                    <TextBlock Text="⇄" FontSize="21" Foreground="White"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+
+                <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="ScreenSwap" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{StaticResource FgBrush}" />
+                    <!-- Text="双屏主显示器 · 桌面窗口快捷调换" FontSize="11"
+                               Foreground="{StaticResource MutedBrush}"-->
+                </StackPanel>
+
+                <Border Grid.Column="2" VerticalAlignment="Center" Margin="0,0,14,0"
+                        Background="#FF232C3D" CornerRadius="12" Padding="12,5">
+                    <TextBlock x:Name="StatusBadge" Text="正在检测显示器…" FontSize="11.5"
+                               Foreground="{StaticResource MutedBrush}" />
+                </Border>
+
+                <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="0,0,14,0"
+                            VerticalAlignment="Center">
+                    <Button x:Name="BtnMinimize" Content="—" Width="32" Height="28" Padding="0"
+                            Style="{StaticResource SmallButton}" Click="BtnMinimize_Click" />
+                    <Button x:Name="BtnCloseWindow" Content="×" Width="32" Height="28" Padding="0"
+                            Margin="8,0,0,0" FontSize="15"
+                            Style="{StaticResource SmallButton}" Click="BtnCloseWindow_Click" />
+                </StackPanel>
+            </Grid>
+
+            <!-- 内容 -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Auto">
+                <StackPanel Margin="24,20,24,20">
+
+                    <!-- 显示器 -->
+                    <TextBlock Text="显示器" Style="{StaticResource SectionTitle}" />
+                    <!--TextBlock Text="无显示器"
+                               Style="{StaticResource HintText}" Margin="0,-4,0,14"-->
+                    <StackPanel x:Name="MonitorPanel" Orientation="Horizontal" MinHeight="160" />
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <Button x:Name="BtnRefresh" Content="刷新显示器列表"
+                                Style="{StaticResource SmallButton}" Click="BtnRefresh_Click" />
+                        <TextBlock x:Name="MonitorSummary" Style="{StaticResource HintText}"
+                                   Margin="14,0,0,0" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <Border Height="1" Background="{StaticResource LineBrush}" Margin="0,20,0,18" />
+
+                    <!-- 快捷键 -->
+                    <TextBlock Text="全局快捷键" Style="{StaticResource SectionTitle}" />
+                    <TextBlock Text="点击输入框后直接按下想要的组合键（例如 Ctrl + Alt + S）；按 Backspace 或 Delete 清除。后台运行时热键依然生效。"
+                               Style="{StaticResource HintText}" Margin="0,-4,0,14" />
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="148" />
+                            <ColumnDefinition Width="300" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="切换主显示器" FontSize="12.5"
+                                   VerticalAlignment="Center" Foreground="{StaticResource FgBrush}" />
+                        <controls:HotkeyBox Grid.Row="0" Grid.Column="1" x:Name="HotkeyToggle"
+                                            Style="{StaticResource HotkeyBoxStyle}"
+                                            Height="34" Margin="0,4,10,4" />
+                        <Button Grid.Row="0" Grid.Column="2" x:Name="BtnClearToggle" Content="清除"
+                                Style="{StaticResource SmallButton}" Click="BtnClearToggle_Click" />
+                        
+                        <!--多余的按钮和功能，与该功能无关-->
+                        <!--TextBlock Grid.Row="1" Grid.Column="0" Text="显示器 1 设为主" FontSize="12.5"
+                                   VerticalAlignment="Center" Foreground="{StaticResource FgBrush}" />
+                        <controls:HotkeyBox Grid.Row="1" Grid.Column="1" x:Name="HotkeyFirst"
+                                            Style="{StaticResource HotkeyBoxStyle}"
+                                            Height="34" Margin="0,4,10,4" />
+                        <Button Grid.Row="1" Grid.Column="2" x:Name="BtnClearFirst" Content="清除"
+                                Style="{StaticResource SmallButton}" Click="BtnClearFirst_Click" />
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="显示器 2 设为主" FontSize="12.5"
+                                   VerticalAlignment="Center" Foreground="{StaticResource FgBrush}" />
+                        <controls:HotkeyBox Grid.Row="2" Grid.Column="1" x:Name="HotkeySecond"
+                                            Style="{StaticResource HotkeyBoxStyle}"
+                                            Height="34" Margin="0,4,10,4" />
+                        <Button Grid.Row="2" Grid.Column="2" x:Name="BtnClearSecond" Content="清除"
+                                Style="{StaticResource SmallButton}" Click="BtnClearSecond_Click"-->
+                    </Grid>
+                    <TextBlock x:Name="HotkeyStatus" Style="{StaticResource HintText}" Margin="0,10,0,0" />
+
+                    <Border Height="1" Background="{StaticResource LineBrush}" Margin="0,20,0,18" />
+
+                    <!-- 选项 -->
+                    <TextBlock Text="运行选项" Style="{StaticResource SectionTitle}" />
+                    <CheckBox x:Name="ChkSwapWindows" Content="切换主显示器时，同时把两屏上的桌面窗口互换"
+                              Checked="Option_Changed" Unchecked="Option_Changed" />
+                    <CheckBox x:Name="ChkAutoStart" Content="开机自动启动（直接后台运行）"
+                              Checked="Option_Changed" Unchecked="Option_Changed" />
+                    <CheckBox x:Name="ChkStartMinimized" Content="启动时直接隐藏到系统托盘"
+                              Checked="Option_Changed" Unchecked="Option_Changed" />
+                    <!--CheckBox x:Name="ChkNotify" Content="切换结果 / 异常时显示托盘气泡提醒"
+                              Checked="Option_Changed" Unchecked="Option_Changed" /-->
+                    <TextBlock x:Name="ConfigPathText" Style="{StaticResource HintText}" Margin="0,10,0,0" />
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- 底部 -->
+            <Border Grid.Row="2" Background="{StaticResource FooterBrush}" Padding="24,14"
+                    BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="StatusText" Text="就绪" FontSize="12.5"
+                                   Foreground="{StaticResource FgBrush}" TextTrimming="CharacterEllipsis" />
+                        <!--TextBlock Text="关闭窗口只会隐藏到托盘，程序继续在后台监听快捷键；退出请从托盘菜单选择。"
+                                   Style="{StaticResource HintText}" Margin="0,3,0,0" -->
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="BtnSave" Content="保存并应用" Style="{StaticResource SmallButton}"
+                                Click="BtnSave_Click" />
+                        <Button x:Name="BtnSwapNow" Content="立即切换" Margin="8,0,0,0"
+                                Style="{StaticResource PrimaryButton}" Click="BtnSwapNow_Click" />
+                        <Button x:Name="BtnHide" Content="隐藏到托盘" Margin="8,0,0,0"
+                                Style="{StaticResource SmallButton}" Click="BtnHide_Click" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>
