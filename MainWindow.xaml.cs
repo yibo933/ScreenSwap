@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     private bool _initialized;
     private bool _suppressEvents;
     private bool _allowClose;
+    private bool _adminBusy;
 
     public MainWindow(AppSettings settings)
     {
@@ -59,6 +60,7 @@ public partial class MainWindow : Window
 
         LoadSettingsToUi();
         ApplySettings(persist: false);
+        UpdateAdminUi();
 
         _initialized = true;
         RefreshMonitors();
@@ -76,6 +78,7 @@ public partial class MainWindow : Window
         //HotkeySecond.Value = _settings.PrimarySecond.Clone();
         ChkSwapWindows.IsChecked = _settings.SwapWindows;
         ChkAutoStart.IsChecked = _settings.StartWithWindows;
+        ChkAdminStartup.IsChecked = _settings.StartAsAdministrator;
         ChkStartMinimized.IsChecked = _settings.StartMinimized;
        // ChkNotify.IsChecked = _settings.ShowNotifications;
         _suppressEvents = false;
@@ -87,8 +90,6 @@ public partial class MainWindow : Window
             App.SettingsStore.Save(_settings);
 
         var errors = _hotkeys.Reload(_settings);
-        if (!AutoStartService.Apply(_settings.StartWithWindows))
-            errors.Add("开机自启设置写入注册表失败。");
 
         if (_miSwapWindows is not null) _miSwapWindows.Checked = _settings.SwapWindows;
         if (_miAutoStart is not null) _miAutoStart.Checked = _settings.StartWithWindows;
@@ -120,12 +121,92 @@ public partial class MainWindow : Window
         if (_suppressEvents || !_initialized)
             return;
 
+        bool autoStartChanged = ReferenceEquals(sender, ChkAutoStart);
         _settings.SwapWindows = ChkSwapWindows.IsChecked == true;
         _settings.StartWithWindows = ChkAutoStart.IsChecked == true;
         _settings.StartMinimized = ChkStartMinimized.IsChecked == true;
        // _settings.ShowNotifications = ChkNotify.IsChecked == true;
         ApplySettings();
-        SetStatus("设置已保存。", false);
+
+        string? error = autoStartChanged ? ApplyAutoStart(allowElevation: true) : null;
+        UpdateAdminUi();
+        if (error is not null)
+            Notify(error, true);
+        SetStatus(error ?? "设置已保存。", error is not null);
+    }
+
+    /// <summary>管理员自启开关：创建 / 删除计划任务需要一次 UAC 授权。</summary>
+    private void AdminOption_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_suppressEvents || !_initialized || _adminBusy)
+            return;
+
+        bool previous = _settings.StartAsAdministrator;
+        _settings.StartAsAdministrator = ChkAdminStartup.IsChecked == true;
+        ApplySettings();
+
+        string? error = ApplyAutoStart(allowElevation: true);
+        if (error is not null)
+        {
+            // 授权被取消或任务写入失败时回滚，避免设置与系统状态长期不一致
+            _settings.StartAsAdministrator = previous;
+            App.SettingsStore.Save(_settings);
+            _suppressEvents = true;
+            ChkAdminStartup.IsChecked = previous;
+            _suppressEvents = false;
+            Notify(error, true);
+        }
+
+        UpdateAdminUi();
+        SetStatus(error ?? (_settings.StartAsAdministrator
+                      ? "已启用管理员权限开机自启动。"
+                      : "已恢复为普通权限开机自启动。"),
+                  error is not null);
+    }
+
+    /// <summary>把设置同步到系统；AutoStartService.Apply 是幂等的，状态一致时不会提权。</summary>
+    private string? ApplyAutoStart(bool allowElevation)
+    {
+        if (_adminBusy)
+            return null;
+
+        _adminBusy = true;
+        try
+        {
+            return AutoStartService.Apply(
+                _settings.StartWithWindows,
+                _settings.StartAsAdministrator,
+                allowElevation);
+        }
+        finally
+        {
+            _adminBusy = false;
+        }
+    }
+
+    private void UpdateAdminUi()
+    {
+        ChkAdminStartup.IsEnabled = ChkAutoStart.IsChecked == true;
+
+        bool elevated = AdminTaskService.IsElevated;
+        BtnRestartAsAdmin.IsEnabled = !elevated;
+        BtnRestartAsAdmin.Content = elevated ? "已以管理员权限运行" : "以管理员权限重新启动";
+        //AdminStatusText.Text = (elevated ? "当前：管理员权限" : "当前：普通权限")
+                              // + " · " + AutoStartService.Describe(
+                                  // _settings.StartWithWindows,
+                                  // _settings.StartAsAdministrator);
+    }
+
+    private void BtnRestartAsAdmin_Click(object sender, RoutedEventArgs e)
+    {
+        string? error = AdminTaskService.RestartAsAdmin();
+        if (error is not null)
+        {
+            SetStatus(error, true);
+            return;
+        }
+        // 新实例已拉起，退出当前实例；互斥体冲突由 --restart 的重试逻辑处理
+        ExitApplication();
     }
 
     // ---------------------------------------------------------------- 托盘
@@ -133,11 +214,11 @@ public partial class MainWindow : Window
     private WinForms.NotifyIcon CreateTrayIcon()
     {
         var menu = new WinForms.ContextMenuStrip();
-        menu.Items.Add("打开设置", null, (_, _) => ShowMainWindow());
+        menu.Items.Add("打开界面", null, (_, _) => ShowMainWindow());
         menu.Items.Add("立即切换主显示器", null, (_, _) => DoSwap(SwapMode.Toggle));
-        menu.Items.Add(new WinForms.ToolStripSeparator());
+        //menu.Items.Add(new WinForms.ToolStripSeparator());
 
-        _miSwapWindows = new WinForms.ToolStripMenuItem("同时调换桌面窗口") { CheckOnClick = true };
+       /* _miSwapWindows = new WinForms.ToolStripMenuItem("同时调换桌面窗口") { CheckOnClick = true };
         _miSwapWindows.Click += (_, _) =>
         {
             _settings.SwapWindows = _miSwapWindows.Checked;
@@ -152,8 +233,14 @@ public partial class MainWindow : Window
             _settings.StartWithWindows = _miAutoStart.Checked;
             SyncOptionCheckboxes();
             ApplySettings();
+            string? error = ApplyAutoStart(allowElevation: true);
+            UpdateAdminUi();
+            if (error is not null)
+                Notify(error, true);
+            SetStatus(error ?? "设置已保存。", error is not null);
         };
-        menu.Items.Add(_miAutoStart);
+        */
+        //menu.Items.Add(_miAutoStart);
 
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add("退出 ScreenSwap", null, (_, _) => ExitApplication());
@@ -175,6 +262,7 @@ public partial class MainWindow : Window
         _suppressEvents = true;
         ChkSwapWindows.IsChecked = _settings.SwapWindows;
         ChkAutoStart.IsChecked = _settings.StartWithWindows;
+        ChkAdminStartup.IsChecked = _settings.StartAsAdministrator;
         _suppressEvents = false;
     }
 
@@ -371,7 +459,7 @@ public partial class MainWindow : Window
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(10),
                 Child = MakeText(
-                    $"当前检测到 {monitors.Count} 台显示器。\n必须恰好连接 2 台显示器，切换功能才会执行AA。",
+                    $"当前检测到 {monitors.Count} 台显示器。\n须连接 2 台显示器，切换功能才会执行。",
                     12, (Brush)FindResource("WarnBrush"))
             });
         }
@@ -435,13 +523,13 @@ public partial class MainWindow : Window
     private void BtnRefresh_Click(object sender, RoutedEventArgs e)
     {
         RefreshMonitors();
-        SetStatus("显示器列表已刷新。", false);
+        SetStatus("显示器列表已刷新", false);
     }
 
     private void BtnSave_Click(object sender, RoutedEventArgs e)
     {
         ApplySettings();
-        SetStatus("设置已保存，全局热键已重新注册。", false);
+        SetStatus("设置已保存", false);
     }
 
     private void BtnSwapNow_Click(object sender, RoutedEventArgs e) => DoSwap(SwapMode.Toggle);

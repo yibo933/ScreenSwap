@@ -22,6 +22,16 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // 提权辅助进程：只负责创建/删除开机自启计划任务。
+        // 必须在单实例互斥体之前处理，否则提权实例会被「程序已在运行」拦下。
+        if (e.Args.Length >= 2 &&
+            string.Equals(e.Args[0], "--admin-task", StringComparison.OrdinalIgnoreCase))
+        {
+            int exitCode = AdminTaskService.RunElevatedRequest(e.Args[1]);
+            Shutdown(exitCode);
+            return;
+        }
+
         // 只读诊断模式：不创建窗口、不注册热键，输出 CCD 结构与当前显示拓扑后退出
         if (e.Args.Any(a => string.Equals(a, "--diagnose", StringComparison.OrdinalIgnoreCase)))
         {
@@ -39,7 +49,23 @@ public partial class App : Application
             return;
         }
 
-        _singleInstanceMutex = new Mutex(initiallyOwned: true, @"Local\ScreenSwap.SingleInstance", out bool createdNew);
+        // 以管理员权限重启时，新实例会在 UAC 通过后立刻启动，
+        // 此时旧实例可能还持有互斥体，短暂重试等它退出。
+        bool restart = e.Args.Any(a => string.Equals(a, "--restart", StringComparison.OrdinalIgnoreCase));
+        Mutex? mutex = null;
+        bool createdNew = false;
+        for (int attempt = 0; attempt < (restart ? 25 : 1); attempt++)
+        {
+            mutex = new Mutex(initiallyOwned: true, @"Local\ScreenSwap.SingleInstance", out createdNew);
+            if (createdNew)
+                break;
+            mutex.Dispose();
+            if (!restart)
+                break;
+            Thread.Sleep(100);
+        }
+        _singleInstanceMutex = createdNew ? mutex : null;
+
         if (!createdNew)
         {
             WinForms.MessageBox.Show(

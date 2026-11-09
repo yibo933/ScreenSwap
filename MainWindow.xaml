@@ -133,10 +133,21 @@
                               Checked="Option_Changed" Unchecked="Option_Changed" />
                     <CheckBox x:Name="ChkAutoStart" Content="开机自动启动（直接后台运行）"
                               Checked="Option_Changed" Unchecked="Option_Changed" />
+                    <CheckBox x:Name="ChkAdminStartup" Margin="24,7,0,7"
+                              Content="以管理员权限开机自启动（以免以管理员权限运行的窗口无法切换）"
+                              Checked="AdminOption_Changed" Unchecked="AdminOption_Changed" />
+                    <!--TextBlock Text="勾选或取消时需确认一次 UAC 授权，用于创建 / 删除登录计划任务；管理员权限可移动任务管理器等高权限窗口。关闭此项时仍按普通权限走注册表 Run 项。"
+                               Style="{StaticResource HintText}" Margin="24,0,0,8"-->
                     <CheckBox x:Name="ChkStartMinimized" Content="启动时直接隐藏到系统托盘"
                               Checked="Option_Changed" Unchecked="Option_Changed" />
                     <!--CheckBox x:Name="ChkNotify" Content="切换结果 / 异常时显示托盘气泡提醒"
                               Checked="Option_Changed" Unchecked="Option_Changed" /-->
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button x:Name="BtnRestartAsAdmin" Content="以管理员权限重新启动"
+                                Style="{StaticResource SmallButton}" Click="BtnRestartAsAdmin_Click" />
+                        <!--TextBlock x:Name="AdminStatusText" Style="{StaticResource HintText}"
+                                   Margin="12,0,0,0" VerticalAlignment="Center"-->
+                    </StackPanel>
                     <TextBlock x:Name="ConfigPathText" Style="{StaticResource HintText}" Margin="0,10,0,0" />
                 </StackPanel>
             </ScrollViewer>

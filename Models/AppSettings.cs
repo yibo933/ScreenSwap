@@ -37,6 +37,9 @@ public sealed class AppSettings
     /// <summary>开机自动启动并隐藏到托盘。</summary>
     public bool StartWithWindows { get; set; }
 
+    /// <summary>开机自启时以管理员权限运行（通过登录计划任务实现，需授权一次 UAC）。</summary>
+    public bool StartAsAdministrator { get; set; }
+
     /// <summary>启动时不显示设置窗口。</summary>
     public bool StartMinimized { get; set; }
 
