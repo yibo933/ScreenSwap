@@ -68,7 +68,7 @@ internal sealed class HotkeyManager : IDisposable
 
         if (!WinApi.RegisterHotKey(_hwnd, id, binding.Modifiers | WinApi.MOD_NOREPEAT, binding.Key))
         {
-            errors.Add($"「{label}」的 {HotkeyText.Describe(binding.Modifiers, binding.Key)} 注册失败，可能已被其他程序占用。");
+            errors.Add($"「{label}」的 {HotkeyText.Describe(binding.Modifiers, binding.Key)} 注册失败，可能已被其他程序占用");
             return;
         }
 

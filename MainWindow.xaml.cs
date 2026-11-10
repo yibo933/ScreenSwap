@@ -95,7 +95,7 @@ public partial class MainWindow : Window
         if (_miAutoStart is not null) _miAutoStart.Checked = _settings.StartWithWindows;
 
         HotkeyStatus.Text = errors.Count == 0
-            ? $"已启用 {_hotkeys.RegisteredCount} 个全局热键，窗口隐藏后依然生效。"
+            ? $"已启用 {_hotkeys.RegisteredCount} 个全局热键，窗口隐藏后依然生效"
             : string.Join(" ", errors);
         HotkeyStatus.Foreground = (Brush)(errors.Count == 0
             ? FindResource("MutedBrush")
@@ -111,7 +111,7 @@ public partial class MainWindow : Window
         //_settings.PrimaryFirst = HotkeyFirst.Value.Clone();
         //_settings.PrimarySecond = HotkeySecond.Value.Clone();
         ApplySettings();
-        SetStatus("快捷键已更新并立即生效。", false);
+        SetStatus("快捷键已更新并立即生效", false);
     }
 
     private void OnHotkeyHint(string text) => SetStatus(text, true);
@@ -122,17 +122,28 @@ public partial class MainWindow : Window
             return;
 
         bool autoStartChanged = ReferenceEquals(sender, ChkAutoStart);
+        bool previousAutoStart = _settings.StartWithWindows;
+        bool previousAsAdmin = _settings.StartAsAdministrator;
+
         _settings.SwapWindows = ChkSwapWindows.IsChecked == true;
         _settings.StartWithWindows = ChkAutoStart.IsChecked == true;
         _settings.StartMinimized = ChkStartMinimized.IsChecked == true;
        // _settings.ShowNotifications = ChkNotify.IsChecked == true;
-        ApplySettings();
-
         string? error = autoStartChanged ? ApplyAutoStart(allowElevation: true) : null;
-        UpdateAdminUi();
+
+        // 只有系统状态变更成功后才落盘；失败时 AutoStartService 已回滚系统状态，这里恢复设置
+        ApplySettings(persist: error is null);
         if (error is not null)
+        {
+            _settings.StartWithWindows = previousAutoStart;
+            _settings.StartAsAdministrator = previousAsAdmin;
+            App.SettingsStore.Save(_settings);
+            SyncOptionCheckboxes();
             Notify(error, true);
-        SetStatus(error ?? "设置已保存。", error is not null);
+        }
+
+        UpdateAdminUi();
+        SetStatus(error ?? "设置已保存", error is not null);
     }
 
     /// <summary>管理员自启开关：创建 / 删除计划任务需要一次 UAC 授权。</summary>
@@ -143,12 +154,13 @@ public partial class MainWindow : Window
 
         bool previous = _settings.StartAsAdministrator;
         _settings.StartAsAdministrator = ChkAdminStartup.IsChecked == true;
-        ApplySettings();
 
         string? error = ApplyAutoStart(allowElevation: true);
+
+        // 系统变更成功才保存设置；失败时 AutoStartService 已回滚系统状态，这里恢复设置与界面
+        ApplySettings(persist: error is null);
         if (error is not null)
         {
-            // 授权被取消或任务写入失败时回滚，避免设置与系统状态长期不一致
             _settings.StartAsAdministrator = previous;
             App.SettingsStore.Save(_settings);
             _suppressEvents = true;
@@ -159,8 +171,8 @@ public partial class MainWindow : Window
 
         UpdateAdminUi();
         SetStatus(error ?? (_settings.StartAsAdministrator
-                      ? "已启用管理员权限开机自启动。"
-                      : "已恢复为普通权限开机自启动。"),
+                      ? "已启用管理员权限开机自启动"
+                      : "已恢复为普通权限开机自启动"),
                   error is not null);
     }
 
@@ -304,7 +316,7 @@ public partial class MainWindow : Window
     private void HideToTray()
     {
         Hide();
-        Notify("已隐藏到系统托盘，快捷键继续在后台生效。", false);
+        Notify("已隐藏到系统托盘，快捷键继续在后台生效", false);
     }
 
     private void ExitApplication()
@@ -325,7 +337,7 @@ public partial class MainWindow : Window
         {
             e.Cancel = true;
             Hide();
-            Notify("已隐藏到系统托盘，快捷键继续在后台生效。", false);
+            Notify("已隐藏到系统托盘，快捷键继续在后台生效", false);
             return;
         }
         base.OnClosing(e);
@@ -446,7 +458,7 @@ public partial class MainWindow : Window
         }
 
         if (monitors.Count == 0)
-            MonitorPanel.Children.Add(MakeText("未检测到任何显示器。", 13, muted));
+            MonitorPanel.Children.Add(MakeText("未检测到任何显示器", 13, muted));
 
         if (monitors.Count != 2)
         {
@@ -459,7 +471,7 @@ public partial class MainWindow : Window
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(10),
                 Child = MakeText(
-                    $"当前检测到 {monitors.Count} 台显示器。\n须连接 2 台显示器，切换功能才会执行。",
+                    $"当前检测到 {monitors.Count} 台显示器。\n须连接 2 台显示器，切换功能才会执行",
                     12, (Brush)FindResource("WarnBrush"))
             });
         }

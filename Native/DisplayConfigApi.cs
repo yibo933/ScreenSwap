@@ -169,7 +169,7 @@ internal static class DisplayConfigApi
 
         if (sources.Count < 2)
         {
-            error = "未检测到两个独立工作的显示器输出（可能处于复制模式），已拒绝切换。";
+            error = "未检测到两个独立工作的显示器输出（可能处于复制模式），已拒绝切换";
             return false;
         }
 
@@ -214,7 +214,7 @@ internal static class DisplayConfigApi
         {
             error = validateOnly
                 ? $"配置校验未通过 (0x{rc:X8})"
-                : $"应用显示配置失败 (0x{rc:X8})，可尝试在「Windows 显示设置」中确认扩展模式。";
+                : $"应用显示配置失败 (0x{rc:X8})，可尝试在「Windows 显示设置」中确认扩展模式";
             return false;
         }
 
@@ -269,7 +269,7 @@ internal static class DisplayConfigApi
         }
         else
         {
-            sb.AppendLine($"[只读校验] 跳过：当前不是 2 台显示器（{monitors.Count} 台）。");
+            sb.AppendLine($"[只读校验] 跳过：当前不是 2 台显示器（{monitors.Count} 台）");
         }
 
         return sb.ToString();

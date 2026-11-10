@@ -31,7 +31,7 @@ public sealed class HotkeyBox : TextBox
         IsUndoEnabled = false;
         IsTabStop = true;
         Cursor = Cursors.IBeam;
-        ToolTip = "点击后按下想要的组合键；Backspace / Delete 可清除。";
+        ToolTip = "点击后按下想要的组合键；Backspace / Delete 可清除";
         RefreshText();
     }
 
@@ -83,7 +83,7 @@ public sealed class HotkeyBox : TextBox
         bool isFunctionKey = vk >= 0x70 && vk <= 0x87 || vk == 0x2C;
         if (modifiers == 0 && !isFunctionKey)
         {
-            Hint?.Invoke("请至少带上一个修饰键（Ctrl / Alt / Shift / Win），避免占用普通按键。");
+            Hint?.Invoke("请至少带上一个修饰键（Ctrl / Alt / Shift / Win），避免占用普通按键");
             return;
         }
 

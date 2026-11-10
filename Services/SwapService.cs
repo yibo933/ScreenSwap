@@ -38,7 +38,7 @@ internal sealed class SwapService
         int currentPrimary = before.FindIndex(m => m.IsPrimary);
         if (currentPrimary < 0)
         {
-            Message?.Invoke("无法确定当前主显示器，已拒绝调换。", true);
+            Message?.Invoke("无法确定当前主显示器，已拒绝调换", true);
             return;
         }
 
@@ -51,7 +51,7 @@ internal sealed class SwapService
 
         if (targetIndex == currentPrimary)
         {
-            Message?.Invoke($"「{before[targetIndex].FriendlyName}」已经是主显示器，无需切换。", false);
+            Message?.Invoke($"「{before[targetIndex].FriendlyName}」已经是主显示器，无需切换", false);
             return;
         }
 
@@ -74,11 +74,17 @@ internal sealed class SwapService
         var newPrimary = after.FirstOrDefault(m => m.IsPrimary);
         string name = newPrimary?.FriendlyName ?? before[targetIndex].FriendlyName;
 
-       // string text = _settings.SwapWindows
-           // ? $"主显示器已切换为「{name}」，已调换 {moved} 个桌面窗口。"
-           // : $"主显示器已切换为「{name}」。";
+        string text;
+        if (_settings.SwapWindows)
+        {
+            text = $"主显示器已成功切换";
+        }
+       else
+        {
+            text = $"主显示器已成功切换为「{name}」";
+        }
 
-       // Message?.Invoke(text, false);
+        Message?.Invoke(text, false);
     }
 
     /// <summary>显示配置变更是异步生效的，等待主显示器标志刷新后再移动窗口。</summary>

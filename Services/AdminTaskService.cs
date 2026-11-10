@@ -55,7 +55,7 @@ internal static class AdminTaskService
             return install ? Install(exePath) : Uninstall();
 
         if (!allowElevation)
-            return "修改管理员自启计划任务需要授权，请在选项中重新勾选一次并确认 UAC 提示。";
+            return "修改管理员自启计划任务需要授权，请在选项中重新勾选一次并确认 UAC 提示";
 
         string requestPath = Path.Combine(
             Path.GetTempPath(), $"ScreenSwap_admin_task_{Environment.ProcessId}.txt");
@@ -78,7 +78,7 @@ internal static class AdminTaskService
 
             using var process = Process.Start(info);
             if (process is null)
-                return "无法启动权限提升进程。";
+                return "无法启动权限提升进程";
 
             process.WaitForExit();
 
@@ -88,13 +88,13 @@ internal static class AdminTaskService
             if (result == "OK")
                 return null;
             return string.IsNullOrWhiteSpace(result)
-                ? "计划任务修改未完成，请确认已在 UAC 提示中允许操作。"
+                ? "计划任务修改未完成，请确认已在 UAC 提示中允许操作"
                 : result;
         }
         catch (Win32Exception)
         {
             // 用户在 UAC 提示中点了「否」
-            return "已取消 UAC 授权，管理员自启设置未更改。";
+            return " UAC 授权失败";
         }
         catch (Exception ex)
         {
@@ -118,7 +118,7 @@ internal static class AdminTaskService
         {
             if (!IsElevated)
             {
-                File.WriteAllText(resultPath, "权限提升未生效，计划任务未修改。", Encoding.UTF8);
+                File.WriteAllText(resultPath, "权限提升未生效，计划任务未修改", Encoding.UTF8);
                 return 2;
             }
 
@@ -137,7 +137,7 @@ internal static class AdminTaskService
 
             if (install && string.IsNullOrWhiteSpace(exePath))
             {
-                File.WriteAllText(resultPath, "请求中缺少主程序路径。", Encoding.UTF8);
+                File.WriteAllText(resultPath, "请求中缺少主程序路径", Encoding.UTF8);
                 return 2;
             }
 
@@ -163,7 +163,7 @@ internal static class AdminTaskService
     public static string? RestartAsAdmin()
     {
         if (IsElevated)
-            return "当前已以管理员权限运行，无需重启。";
+            return "当前已以管理员权限运行，无需重启";
 
         try
         {
@@ -180,7 +180,7 @@ internal static class AdminTaskService
         }
         catch (Win32Exception)
         {
-            return "已取消 UAC 授权，程序继续以普通权限运行。";
+            return "已取消 UAC 授权，程序继续以普通权限运行";
         }
         catch (Exception ex)
         {
@@ -201,7 +201,7 @@ internal static class AdminTaskService
             var (code, _) = RunSchtasks($"/Create /TN \"{TaskName}\" /XML \"{xmlPath}\" /F");
             return code == 0
                 ? null
-                : $"创建计划任务失败（schtasks 退出码 {code}）。";
+                : $"创建计划任务失败（schtasks 退出码 {code}）";
         }
         catch (Exception ex)
         {
@@ -221,7 +221,7 @@ internal static class AdminTaskService
         var (code, _) = RunSchtasks($"/Delete /TN \"{TaskName}\" /F");
         return code == 0
             ? null
-            : $"删除计划任务失败（schtasks 退出码 {code}）。";
+            : $"删除计划任务失败（schtasks 退出码 {code}）";
     }
 
     private static string BuildTaskXml(string exePath)

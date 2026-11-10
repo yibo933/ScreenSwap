@@ -83,7 +83,7 @@
 
                     <!-- 快捷键 -->
                     <TextBlock Text="全局快捷键" Style="{StaticResource SectionTitle}" />
-                    <TextBlock Text="点击输入框后直接按下想要的组合键（例如 Ctrl + Alt + S）；按 Backspace 或 Delete 清除。后台运行时热键依然生效。"
+                    <TextBlock Text="点击输入框后直接按下想要的组合键（例如 Ctrl + Alt + S）；按 Backspace 或 Delete 清除。后台运行时热键依然生效"
                                Style="{StaticResource HintText}" Margin="0,-4,0,14" />
 
                     <Grid>
